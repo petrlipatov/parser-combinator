@@ -195,6 +195,11 @@ const config: Config = {
   // Whether to use watchman for file crawling
   // watchman: true,
   moduleFileExtensions: ["js", "ts"],
+  roots: ["<rootDir>/src/"],
+  testMatch: [
+    "<rootDir>/src/**/*.test.[jt]s?(x)",
+    "<rootDir>/src/**/*.spec.[jt]s?(x)",
+  ],
 };
 
 export default config;
