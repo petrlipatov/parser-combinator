@@ -65,7 +65,7 @@ describe("seq Parser:", () => {
     const parser = seq(
       {
         token: "DIV_TOKEN",
-        tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+        valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
       },
       tag("<"),
       tag("div"),

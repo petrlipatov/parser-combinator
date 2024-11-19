@@ -1,12 +1,13 @@
-import { ParserState, ParserType } from "../../shared/constants";
+import { ParserMessage, ParserState, ParserType } from "../../shared/constants";
 import { createParserToken, intoIter } from "../../helpers";
-import { Parser, OptionalYieldToken } from "../../shared/types";
+import { Parser, OptionalYieldToken, ParserError } from "../../shared/types";
 import { RepeatOptions } from "./utils/types";
 import {
   SuccessfulResult,
   AbortedResult,
   OptionalToken,
 } from "../../shared/classes";
+import { optionsProvided } from "../../shared/helpers";
 
 export function repeat<R = SuccessfulResult, T = unknown>(
   parser: Parser,
@@ -17,7 +18,7 @@ export function repeat<R = SuccessfulResult, T = unknown>(
     let sourceIter = intoIter(source);
     let count = 0;
 
-    const parsersResults: SuccessfulResult[] = [];
+    const parsedResult: SuccessfulResult[] = [];
     const bufferedYields: OptionalYieldToken[] = [];
 
     let parserIter;
@@ -35,35 +36,11 @@ export function repeat<R = SuccessfulResult, T = unknown>(
         let chunk = parserIter.next();
         let { state: parserState } = chunk.value;
 
-        // if (invalidPairs && "data" in chunk.value) {
-        //   const { data: currChunkChar } = chunk.value;
-        //   const { value: nextChunkChar } = sourceIter.peak();
-
-        //   for (const pair of invalidPairs) {
-        //     if (isPairInvalid(currChunkChar, nextChunkChar, pair)) {
-        //       if (count < min) {
-        //         return createAbortedResult({
-        //           type: ParserType.REPEAT,
-        //           prevParser: prev,
-        //           message: `Invalid pair "${currChunkChar}${nextChunkChar}"`,
-        //           options,
-        //         });
-        //       }
-
-        //       sourceIter =
-        //         buffer.length > 0 ? iterSeq(buffer, sourceIter) : sourceIter;
-        //       break outer;
-        //     }
-        //   }
-        // }
-
         while (parserState === ParserState.EXPECT_NEW_INPUT) {
           if (count >= min) {
-            const delta = buffer.length - bufferLengthOnInit;
-
-            if (delta > 0) {
-              const spliced = buffer.splice(-delta);
-              sourceIter.revert(spliced);
+            const charsCountToRevert = buffer.length - bufferLengthOnInit;
+            if (charsCountToRevert > 0) {
+              sourceIter.revert(charsCountToRevert);
             }
             break outer;
           }
@@ -76,7 +53,7 @@ export function repeat<R = SuccessfulResult, T = unknown>(
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
 
-            parsersResults.push(chunk.value);
+            parsedResult.push(chunk.value);
             prev = chunk.value;
             count++;
             sourceIter = intoIter(iter);
@@ -95,36 +72,52 @@ export function repeat<R = SuccessfulResult, T = unknown>(
           }
 
           case ParserState.ABORTED: {
-            if (count < min) {
-              const delta = buffer.length - bufferLengthOnInit;
+            const symbolsToRollback = buffer.length - bufferLengthOnInit;
+            if (symbolsToRollback > 0) {
+              sourceIter.revert(symbolsToRollback);
+            }
 
-              if (delta > 0) {
-                sourceIter.revert(delta);
-              }
+            if (count < min) {
               return new AbortedResult({
                 type: ParserType.REPEAT,
-                message: "repeat error",
+                message: ParserMessage.REPEAT_ERROR,
                 prevParser: prev,
+                prevValue: parsedResult,
                 options,
               });
             }
-
-            const delta = buffer.length - bufferLengthOnInit;
-
-            if (delta > 0) {
-              sourceIter.revert(delta);
-            }
-
             break outer;
           }
         }
       }
     }
 
-    if ("token" in options && count > 0) {
-      yield new OptionalToken(parsersResults, options);
+    if (optionsProvided(options) && count > 0) {
+      yield new OptionalToken(parsedResult, options);
     }
 
-    return new SuccessfulResult(ParserType.REPEAT, parsersResults, sourceIter);
+    return new SuccessfulResult(ParserType.REPEAT, parsedResult, sourceIter);
   };
 }
+
+// if (invalidPairs && "data" in chunk.value) {
+//   const { data: currChunkChar } = chunk.value;
+//   const { value: nextChunkChar } = sourceIter.peak();
+
+//   for (const pair of invalidPairs) {
+//     if (isPairInvalid(currChunkChar, nextChunkChar, pair)) {
+//       if (count < min) {
+//         return createAbortedResult({
+//           type: ParserType.REPEAT,
+//           prevParser: prev,
+//           message: `Invalid pair "${currChunkChar}${nextChunkChar}"`,
+//           options,
+//         });
+//       }
+
+//       sourceIter =
+//         buffer.length > 0 ? iterSeq(buffer, sourceIter) : sourceIter;
+//       break outer;
+//     }
+//   }
+// }

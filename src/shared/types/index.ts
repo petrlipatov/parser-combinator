@@ -37,8 +37,6 @@ export interface AbortedReturnToken<R = unknown> extends ParserReturnResult {
   iter?: Iterable<string>;
 }
 
-//Generator<T = unknown, TReturn = any, TNext = any>
-
 export type Parser<R = unknown, T = unknown> = (
   iterable: Iterable<string>,
   prev?: SuccessfulReturnToken
@@ -50,7 +48,7 @@ export type Parser<R = unknown, T = unknown> = (
 
 export interface ParserOptions<R = unknown> {
   token?: string;
-  tokenValue?(parsedChars: R);
+  valueMapper?(parsedChars: R);
 }
 
 export type TestPattern = string | RegExp | ((char: string) => boolean);

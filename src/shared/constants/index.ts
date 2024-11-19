@@ -10,6 +10,7 @@ export enum ParserType {
 export enum ParserMessage {
   EXPECT_NEW_INPUT = "Parser expects new value",
   OR_ERROR = "At least one parser must succeed for the 'OR' operation to be valid.",
+  REPEAT_ERROR = "Minimal threshold condition not met",
 }
 
 export enum ParserState {

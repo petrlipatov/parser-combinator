@@ -120,7 +120,7 @@ const tagNameChar = tag(TAG_NAME_CHAR);
 const attributeName = seq(
   {
     token: "ATTRIBUTE_NAME",
-    tokenValue: (output) =>
+    valueMapper: (output) =>
       output.reduce((acc, el) => {
         const data = Array.isArray(el.data)
           ? el.data.map((item) => item.data).join("")
@@ -138,7 +138,7 @@ const attributeName = seq(
 const attributeValue = or(
   {
     token: "ATTRIBUTE_VALUE",
-    tokenValue: (output) => {
+    valueMapper: (output) => {
       if (output.type === ParserType.REPEAT && Array.isArray(output.data)) {
         return output.data.map((item) => item.data).join("");
       } else if (Array.isArray(output.data)) {
@@ -168,13 +168,13 @@ const styleProperty = seq(
   optional(ws),
   repeat(tag(STYLE_PROP_NAME_CHAR), {
     token: "STYLE_PROP_NAME",
-    tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+    valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
   }),
   tag(":"),
   ws,
   repeat(tag(STYLE_PROP_VALUE_CHAR), {
     token: "STYLE_PROP_VALUE",
-    tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+    valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
   }),
   tag(`;`)
 );
@@ -201,14 +201,14 @@ const styleAttribute = seq(
 
 const attributeKeyword = repeat(tagNameChar, {
   token: "KEYWORD",
-  tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+  valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
 });
 
 const openTag = seq(
   tag("<"),
   repeat(tagNameChar, {
     token: "OPENING_TAG",
-    tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+    valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
   }),
   optional(
     repeat(
@@ -241,7 +241,7 @@ const closeTag = seq(
   tag("/"),
   repeat(tagNameChar, {
     token: "CLOSING_TAG",
-    tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+    valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
   }),
   tag(">")
 );
@@ -251,7 +251,7 @@ const closeTag = seq(
 
 const textNode = repeat(tag(TEXT_NODE_CHAR), {
   token: "TEXT_NODE",
-  tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+  valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
 });
 
 // const i = textNode("div");

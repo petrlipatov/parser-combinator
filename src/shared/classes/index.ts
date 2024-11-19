@@ -88,7 +88,7 @@ export class OptionalToken<R = unknown> implements OptionalYieldToken {
   constructor(data: R, options: ParserOptions) {
     this.state = ParserState.YIELD;
     this.type = options.token;
-    this.data = options.tokenValue?.(data) ?? data;
+    this.data = options.valueMapper?.(data) ?? data;
   }
 }
 

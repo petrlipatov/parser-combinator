@@ -14,6 +14,7 @@ import {
   OptionalToken,
   SuccessfulResult,
 } from "../../shared/classes";
+import { optionsProvided } from "../../shared/helpers";
 
 export function seq<R = SuccessfulReturnToken>(
   ...parsers: Parser[]
@@ -22,7 +23,7 @@ export function seq<R = SuccessfulReturnToken>(
 export function seq<R = SuccessfulReturnToken>(
   options: ParserOptions<R[]>,
   ...parsers: Parser[]
-): Parser<R[], (typeof options.tokenValue)[]>;
+): Parser<R[], (typeof options.valueMapper)[]>;
 
 export function seq(
   firstArg: Parser | ParserOptions,
@@ -37,7 +38,7 @@ export function seq(
   }
 
   return function* (source, prev: SuccessfulReturnToken) {
-    let parsedValues: SuccessfulReturnToken[] = [];
+    let parsedResult: SuccessfulReturnToken[] = [];
     let sourceIter = intoIter(source);
     let parserIter;
 
@@ -47,10 +48,11 @@ export function seq(
       loop: while (true) {
         const chunk = parserIter.next();
         const { state: parserState } = chunk.value;
+
         switch (parserState) {
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
-            parsedValues.push(chunk.value);
+            parsedResult.push(chunk.value);
             sourceIter = intoIter(iter);
             prev = chunk.value;
             break loop;
@@ -84,10 +86,10 @@ export function seq(
       }
     }
 
-    if ("token" in options) {
-      yield new OptionalToken(parsedValues, options);
+    if (optionsProvided(options)) {
+      yield new OptionalToken(parsedResult, options);
     }
 
-    return new SuccessfulResult(ParserType.SEQ, parsedValues, sourceIter);
+    return new SuccessfulResult(ParserType.SEQ, parsedResult, sourceIter);
   };
 }

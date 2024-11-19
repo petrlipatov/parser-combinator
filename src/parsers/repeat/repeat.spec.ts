@@ -367,7 +367,7 @@ describe("repeat Parser:", () => {
   it("should return correct parser token with custom mapped value", () => {
     const parser = repeat(tag([/[a-z]/]), {
       token: "TOKEN",
-      tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
+      valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
     });
 
     const parserIter = parser("name");

@@ -13,14 +13,15 @@ import {
   OptionalToken,
   SuccessfulResult,
 } from "../../shared/classes";
+import { optionsProvided } from "../../shared/helpers";
 
 export function tag<R = string>(
   pattern: Iterable<TestPattern>,
   options: ParserOptions<R> = {}
-): Parser<string, typeof options.tokenValue> {
+): Parser<string, typeof options.valueMapper> {
   return function* (source: Iterable<string>, prev: SuccessfulReturnToken) {
     let sourceIter = intoIter(source);
-    let parsedChars = "";
+    let parsedResult = "";
 
     for (const patternSymbol of pattern) {
       let chunk = sourceIter.next();
@@ -42,17 +43,17 @@ export function tag<R = string>(
           message,
           options,
           prevParser: prev,
-          prevValue: parsedChars,
+          prevValue: parsedResult,
           pattern,
         });
       }
-      parsedChars += char;
+      parsedResult += char;
     }
 
-    if ("token" in options) {
-      yield new OptionalToken(parsedChars, options);
+    if (optionsProvided(options)) {
+      yield new OptionalToken(parsedResult, options);
     }
 
-    return new SuccessfulResult(ParserType.TAG, parsedChars, sourceIter);
+    return new SuccessfulResult(ParserType.TAG, parsedResult, sourceIter);
   };
 }

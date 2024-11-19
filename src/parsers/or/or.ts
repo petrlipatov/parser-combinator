@@ -11,6 +11,7 @@ import {
   OptionalToken,
   SuccessfulResult,
 } from "../../shared/classes";
+import { optionsProvided } from "../../shared/helpers";
 
 export function or<R = SuccessfulResult, T = unknown>(
   ...parsers: Parser[]
@@ -19,7 +20,7 @@ export function or<R = SuccessfulResult, T = unknown>(
 export function or<R = SuccessfulResult, T = unknown>(
   options: ParserOptions<R>,
   ...parsers: Parser[]
-): Parser<R | R[], typeof options.tokenValue>;
+): Parser<R | R[], typeof options.valueMapper>;
 
 export function or(
   firstArg: ParserOptions | Parser,
@@ -34,7 +35,7 @@ export function or(
   }
 
   return function* (source, prev: SuccessfulResult) {
-    let parsedValue: SuccessfulResult;
+    let parsedResult: SuccessfulResult;
     let sourceIter = intoIter(source);
     let isSuccessful = false;
 
@@ -61,11 +62,10 @@ export function or(
         switch (parserState) {
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
-            parsedValue = chunk.value;
+            parsedResult = chunk.value;
             prev = chunk.value;
             isSuccessful = true;
             sourceIter = intoIter(iter);
-
             break outer;
           }
 
@@ -76,13 +76,10 @@ export function or(
 
           case ParserState.ABORTED: {
             errorsStack.push(chunk.value);
-
-            const delta = buffer.length - bufferLengthOnInit;
-
-            if (delta > 0) {
-              sourceIter.revert(delta);
+            const symbolsToRollback = buffer.length - bufferLengthOnInit;
+            if (symbolsToRollback > 0) {
+              sourceIter.revert(symbolsToRollback);
             }
-
             bufferedTokens.splice(0, bufferedTokens.length);
             break inner;
           }
@@ -101,10 +98,10 @@ export function or(
 
     yield* bufferedTokens;
 
-    if ("token" in options) {
-      yield new OptionalToken(parsedValue, options);
+    if (optionsProvided(options)) {
+      yield new OptionalToken(parsedResult, options);
     }
 
-    return new SuccessfulResult(ParserType.OR, parsedValue, sourceIter);
+    return new SuccessfulResult(ParserType.OR, parsedResult, sourceIter);
   };
 }
