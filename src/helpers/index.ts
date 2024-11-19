@@ -12,20 +12,21 @@ import {
   TestPattern,
 } from "../shared/types";
 
-export let callCount1 = 0;
 export let callCount2 = 0;
-export let callCount3 = 0;
 
 export function intoIter<T>(
   iterable: Iterable<T>
 ): ExtendedIterableIterator<T> {
-  let iter = iterable[Symbol.iterator]();
+  if ("revert" in iterable[Symbol.iterator]()) {
+    callCount2++;
 
-  if ("peak" in iter) {
-    return iter as ExtendedIterableIterator<T>;
+    return iterable[Symbol.iterator]() as ExtendedIterableIterator<T>;
   }
 
-  let nextValue: IteratorResult<T> | null = null;
+  const stack = [];
+  const buffer = [];
+
+  let currIter = iterable[Symbol.iterator]();
 
   return {
     [Symbol.iterator]() {
@@ -33,48 +34,16 @@ export function intoIter<T>(
     },
 
     next() {
-      if (nextValue !== null) {
-        const result = nextValue;
-        nextValue = null;
-        return result;
+      let chunk = currIter.next();
+
+      while (chunk.done) {
+        if (stack.length === 0) {
+          return chunk;
+        }
+        currIter = stack.pop();
+        chunk = currIter.next();
       }
 
-      const chunk = iter.next();
-      callCount1 += 1;
-      // console.log("intoIter", callCount);
-      // console.log(chunk);
-      return chunk;
-    },
-
-    revert(iterable: Iterable<T>) {
-      const old = iter as ExtendedIterableIterator<T>;
-      iter = iterSeq(iterable, old);
-    },
-
-    peak() {
-      if (nextValue === null) {
-        nextValue = iter.next();
-      }
-      return nextValue;
-    },
-  };
-}
-
-export function intoBufIter<T>(
-  iterable: Iterable<T>,
-  buffer: T[]
-): BufferedIterator<T> {
-  const iter = intoIter(iterable);
-
-  return {
-    [Symbol.iterator]() {
-      return this;
-    },
-
-    next() {
-      const chunk = iter.next();
-      callCount2 += 1;
-      // console.log(chunk);
       if (!chunk.done) {
         buffer.push(chunk.value);
       }
@@ -82,60 +51,139 @@ export function intoBufIter<T>(
       return chunk;
     },
 
-    revert(iterable) {
-      iter.revert(iterable);
-    },
-
-    getIter() {
-      return iter;
-    },
-
     getBuffer() {
       return buffer;
     },
 
-    peak() {
-      return iter.peak();
+    revert(revertedValueCount) {
+      stack.push(currIter);
+      const spliced = buffer.splice(buffer.length - revertedValueCount);
+
+      currIter = spliced[Symbol.iterator]();
     },
   };
 }
 
-export function iterSeq<T>(
-  ...iterable: Iterable<T>[]
-): ExtendedIterableIterator<T> {
-  let cursor = 0;
-  let iter = intoIter(iterable[cursor]);
+// export function intoIter<T>(
+//   iterable: Iterable<T>
+// ): ExtendedIterableIterator<T> {
+//   let iter = iterable[Symbol.iterator]();
 
-  return {
-    [Symbol.iterator]() {
-      return this;
-    },
+//   if ("peak" in iter) {
+//     return iter as ExtendedIterableIterator<T>;
+//   }
 
-    revert(iterable) {
-      iter.revert(iterable);
-    },
+//   let nextValue: IteratorResult<T> | null = null;
 
-    next() {
-      let chunk = iter.next();
-      callCount3 += 1;
-      while (chunk.done) {
-        cursor++;
+//   return {
+//     [Symbol.iterator]() {
+//       return this;
+//     },
 
-        if (iterable[cursor] == null) {
-          return chunk;
-        }
+//     next() {
+//       if (nextValue !== null) {
+//         const result = nextValue;
+//         nextValue = null;
+//         return result;
+//       }
 
-        iter = intoIter(iterable[cursor]);
-        chunk = iter.next();
-      }
+//       const chunk = iter.next();
+//       callCount1 += 1;
+//       // console.log("intoIter", callCount);
+//       // console.log(chunk);
+//       return chunk;
+//     },
 
-      return chunk;
-    },
-    peak() {
-      return iter.peak();
-    },
-  };
-}
+//     revert(iterable: Iterable<T>) {
+//       const old = iter as ExtendedIterableIterator<T>;
+//       iter = iterSeq(iterable, old);
+//     },
+
+//     peak() {
+//       if (nextValue === null) {
+//         nextValue = iter.next();
+//       }
+//       return nextValue;
+//     },
+//   };
+// }
+
+// export function intoBufIter<T>(
+//   iterable: Iterable<T>,
+//   buffer: T[]
+// ): BufferedIterator<T> {
+//   const iter = intoIter(iterable);
+
+//   return {
+//     [Symbol.iterator]() {
+//       return this;
+//     },
+
+//     next() {
+//       const chunk = iter.next();
+//       callCount2 += 1;
+//       // console.log(chunk);
+//       if (!chunk.done) {
+//         buffer.push(chunk.value);
+//       }
+
+//       return chunk;
+//     },
+
+//     revert(iterable) {
+//       iter.revert(iterable);
+//     },
+
+//     getIter() {
+//       return iter;
+//     },
+
+//     getBuffer() {
+//       return buffer;
+//     },
+
+//     peak() {
+//       return iter.peak();
+//     },
+//   };
+// }
+
+// export function iterSeq<T>(
+//   ...iterable: Iterable<T>[]
+// ): ExtendedIterableIterator<T> {
+//   let cursor = 0;
+//   let iter = intoIter(iterable[cursor]);
+
+//   return {
+//     [Symbol.iterator]() {
+//       return this;
+//     },
+
+//     revert(iterable) {
+//       iter.revert(iterable);
+//     },
+
+//     next() {
+//       let chunk = iter.next();
+//       callCount3 += 1;
+//       while (chunk.done) {
+//         cursor++;
+
+//         if (iterable[cursor] == null) {
+//           return chunk;
+//         }
+
+//         iter = intoIter(iterable[cursor]);
+//         chunk = iter.next();
+//       }
+
+//       return chunk;
+//     },
+//     peak() {
+//       return iter.peak();
+//     },
+//   };
+// }
 
 export function testChar(
   test: TestPattern,

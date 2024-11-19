@@ -2,7 +2,6 @@ import { ParserState, ParserType } from "../../shared/constants";
 import {
   createParserToken,
   createSeqErrorMessage,
-  intoBufIter,
   intoIter,
   isBufferedIter,
 } from "../../helpers";
@@ -38,18 +37,10 @@ export function seq(
     let output: SuccessfulReturnToken[] = [];
     let sourceIter = intoIter(source);
 
-    let buffer = [];
-    if (isBufferedIter(sourceIter)) {
-      buffer = sourceIter.getBuffer();
-    }
-
     for (const parser of parsers) {
       let parserIter;
-      if (isBufferedIter(sourceIter)) {
-        parserIter = parser(sourceIter);
-      } else {
-        parserIter = parser(intoBufIter(sourceIter, buffer), prev);
-      }
+
+      parserIter = parser(sourceIter);
 
       loop: while (true) {
         const chunk = parserIter.next();

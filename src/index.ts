@@ -1,5 +1,5 @@
 import { ParserType } from "./shared/constants";
-import { callCount1, callCount2, callCount3 } from "./helpers";
+import { callCount2 } from "./helpers";
 import { optional } from "./parsers/optional";
 import { or } from "./parsers/or";
 import { repeat } from "./parsers/repeat";
@@ -283,9 +283,7 @@ const res2 = [...i];
 const endTime = performance.now();
 console.log(`Время выполнения: ${endTime - startTime} мс`);
 
-console.log(callCount1);
 console.log(callCount2);
-console.log(callCount3);
 
 // res2.forEach((token) => {
 //   console.log(token);

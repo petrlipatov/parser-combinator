@@ -56,12 +56,12 @@ export interface ParserOptions<R = unknown> {
 export type TestPattern = string | RegExp | ((char: string) => boolean);
 
 export interface ExtendedIterableIterator<T> extends IterableIterator<T> {
-  peak(): IteratorResult<T>;
   revert(iterable): void;
+  getBuffer: () => T[];
 }
 
 export interface BufferedIterator<T> extends ExtendedIterableIterator<T> {
-  getIter: () => ExtendedIterableIterator<T>;
+  revert(iterable): void;
   getBuffer: () => T[];
 }
 

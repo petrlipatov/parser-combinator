@@ -1,11 +1,5 @@
 import { ParserState, ParserType } from "../../shared/constants";
-import {
-  createParserToken,
-  intoBufIter,
-  intoIter,
-  isBufferedIter,
-  iterSeq,
-} from "../../helpers";
+import { createParserToken, intoIter } from "../../helpers";
 import { Parser, OptionalYieldToken } from "../../shared/types";
 import { RepeatOptions } from "./utils/types";
 import { SuccessfulResult, AbortedResult } from "../../shared/classes";
@@ -17,27 +11,17 @@ export function repeat<R = SuccessfulResult, T = unknown>(
   return function* (source: Iterable<string>, prev: SuccessfulResult) {
     const { min = 1, max = Infinity, invalidPairs } = options;
     let sourceIter = intoIter(source);
-
     let count = 0;
 
     const parsersResults: SuccessfulResult[] = [];
     const bufferedYields: OptionalYieldToken[] = [];
 
     let parserIter;
-    let buffer = [];
-    let bufferLengthOnInit = 0;
-
-    if (isBufferedIter(sourceIter)) {
-      buffer = sourceIter.getBuffer();
-      bufferLengthOnInit = buffer.length;
-    }
+    let buffer = sourceIter.getBuffer();
+    let bufferLengthOnInit = buffer.length;
 
     outer: while (true) {
-      if (isBufferedIter(sourceIter)) {
-        parserIter = parser(sourceIter);
-      } else {
-        parserIter = parser(intoBufIter(sourceIter, buffer), prev);
-      }
+      parserIter = parser(sourceIter);
 
       inner: while (true) {
         if (count >= max) {
@@ -45,7 +29,6 @@ export function repeat<R = SuccessfulResult, T = unknown>(
         }
 
         let chunk = parserIter.next();
-
         let { state: parserState } = chunk.value;
 
         // if (invalidPairs && "data" in chunk.value) {
@@ -73,9 +56,10 @@ export function repeat<R = SuccessfulResult, T = unknown>(
         while (parserState === ParserState.EXPECT_NEW_INPUT) {
           if (count >= min) {
             const delta = buffer.length - bufferLengthOnInit;
+
             if (delta > 0) {
               const spliced = buffer.splice(-delta);
-              sourceIter = iterSeq(spliced, sourceIter);
+              sourceIter.revert(spliced);
             }
             break outer;
           }
@@ -108,17 +92,11 @@ export function repeat<R = SuccessfulResult, T = unknown>(
 
           case ParserState.ABORTED: {
             if (count < min) {
-              if (isBufferedIter(sourceIter)) {
-                sourceIter = sourceIter.getIter();
-              }
-
               const delta = buffer.length - bufferLengthOnInit;
 
               if (delta > 0) {
-                const spliced = buffer.splice(-delta);
-                sourceIter.revert(spliced);
+                sourceIter.revert(delta);
               }
-
               return new AbortedResult({
                 type: ParserType.REPEAT,
                 message: "repeat error",
@@ -127,15 +105,10 @@ export function repeat<R = SuccessfulResult, T = unknown>(
               });
             }
 
-            if (isBufferedIter(sourceIter)) {
-              sourceIter = sourceIter.getIter();
-            }
-
             const delta = buffer.length - bufferLengthOnInit;
 
             if (delta > 0) {
-              const spliced = buffer.splice(-delta);
-              sourceIter.revert(spliced);
+              sourceIter.revert(delta);
             }
 
             break outer;

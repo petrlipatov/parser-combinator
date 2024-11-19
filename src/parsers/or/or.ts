@@ -1,10 +1,5 @@
 import { ParserMessage, ParserState, ParserType } from "../../shared/constants";
-import {
-  createParserToken,
-  intoBufIter,
-  intoIter,
-  isBufferedIter,
-} from "../../helpers";
+import { createParserToken, intoIter } from "../../helpers";
 import {
   AbortedReturnToken,
   Parser,
@@ -40,23 +35,14 @@ export function or(
     let isSuccessful = false;
 
     let parserIter;
-    let buffer = [];
-    let bufferLengthOnInit = 0;
-
-    if (isBufferedIter(sourceIter)) {
-      buffer = sourceIter.getBuffer();
-      bufferLengthOnInit = buffer.length;
-    }
+    let buffer = sourceIter.getBuffer();
+    let bufferLengthOnInit = buffer.length;
 
     const errorsStack: AbortedReturnToken[] = [];
     const bufferedTokens: OptionalYieldToken[] = [];
 
     outer: for (const parser of parsers) {
-      if (isBufferedIter(sourceIter)) {
-        parserIter = parser(sourceIter);
-      } else {
-        parserIter = parser(intoBufIter(sourceIter, buffer), prev);
-      }
+      parserIter = parser(sourceIter);
 
       inner: while (true) {
         let chunk = parserIter.next();
@@ -74,12 +60,7 @@ export function or(
             output = chunk.value;
             prev = chunk.value;
             isSuccessful = true;
-
-            if (isBufferedIter(iter)) {
-              sourceIter = iter.getIter();
-            } else {
-              sourceIter = intoIter(iter);
-            }
+            sourceIter = intoIter(iter);
 
             break outer;
           }
@@ -92,14 +73,10 @@ export function or(
           case ParserState.ABORTED: {
             errorsStack.push(chunk.value);
 
-            if (isBufferedIter(sourceIter)) {
-              sourceIter = sourceIter.getIter();
-            }
+            const delta = buffer.length - bufferLengthOnInit;
 
-            const bufferDelta = buffer.length - bufferLengthOnInit;
-            if (bufferDelta > 0) {
-              const chars = buffer.splice(-bufferDelta);
-              sourceIter.revert(chars);
+            if (delta > 0) {
+              sourceIter.revert(delta);
             }
 
             bufferedTokens.splice(0, bufferedTokens.length);
