@@ -2,7 +2,11 @@ import { ParserState, ParserType } from "../../shared/constants";
 import { createParserToken, intoIter } from "../../helpers";
 import { Parser, OptionalYieldToken } from "../../shared/types";
 import { RepeatOptions } from "./utils/types";
-import { SuccessfulResult, AbortedResult } from "../../shared/classes";
+import {
+  SuccessfulResult,
+  AbortedResult,
+  OptionalToken,
+} from "../../shared/classes";
 
 export function repeat<R = SuccessfulResult, T = unknown>(
   parser: Parser,
@@ -117,10 +121,8 @@ export function repeat<R = SuccessfulResult, T = unknown>(
       }
     }
 
-    const parserToken = createParserToken(options, parsersResults);
-
-    if (parserToken && count > 0) {
-      yield parserToken;
+    if ("token" in options && count > 0) {
+      yield new OptionalToken(parsersResults, options);
     }
 
     return new SuccessfulResult(ParserType.REPEAT, parsersResults, sourceIter);

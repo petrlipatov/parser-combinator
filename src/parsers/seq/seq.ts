@@ -3,14 +3,17 @@ import {
   createParserToken,
   createSeqErrorMessage,
   intoIter,
-  isBufferedIter,
 } from "../../helpers";
 import {
   Parser,
   ParserOptions,
   SuccessfulReturnToken,
 } from "../../shared/types";
-import { AbortedResult, SuccessfulResult } from "../../shared/classes";
+import {
+  AbortedResult,
+  OptionalToken,
+  SuccessfulResult,
+} from "../../shared/classes";
 
 export function seq<R = SuccessfulReturnToken>(
   ...parsers: Parser[]
@@ -34,12 +37,11 @@ export function seq(
   }
 
   return function* (source, prev: SuccessfulReturnToken) {
-    let output: SuccessfulReturnToken[] = [];
+    let parsedValues: SuccessfulReturnToken[] = [];
     let sourceIter = intoIter(source);
+    let parserIter;
 
     for (const parser of parsers) {
-      let parserIter;
-
       parserIter = parser(sourceIter);
 
       loop: while (true) {
@@ -48,7 +50,7 @@ export function seq(
         switch (parserState) {
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
-            output.push(chunk.value);
+            parsedValues.push(chunk.value);
             sourceIter = intoIter(iter);
             prev = chunk.value;
             break loop;
@@ -82,11 +84,10 @@ export function seq(
       }
     }
 
-    const parserToken = createParserToken(options, output);
-    if (parserToken) {
-      yield parserToken;
+    if ("token" in options) {
+      yield new OptionalToken(parsedValues, options);
     }
 
-    return new SuccessfulResult(ParserType.SEQ, output, sourceIter);
+    return new SuccessfulResult(ParserType.SEQ, parsedValues, sourceIter);
   };
 }

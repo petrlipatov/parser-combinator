@@ -6,7 +6,11 @@ import {
   ParserOptions,
   OptionalYieldToken,
 } from "../../shared/types";
-import { AbortedResult, SuccessfulResult } from "../../shared/classes";
+import {
+  AbortedResult,
+  OptionalToken,
+  SuccessfulResult,
+} from "../../shared/classes";
 
 export function or<R = SuccessfulResult, T = unknown>(
   ...parsers: Parser[]
@@ -30,7 +34,7 @@ export function or(
   }
 
   return function* (source, prev: SuccessfulResult) {
-    let output: SuccessfulResult;
+    let parsedValue: SuccessfulResult;
     let sourceIter = intoIter(source);
     let isSuccessful = false;
 
@@ -57,7 +61,7 @@ export function or(
         switch (parserState) {
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
-            output = chunk.value;
+            parsedValue = chunk.value;
             prev = chunk.value;
             isSuccessful = true;
             sourceIter = intoIter(iter);
@@ -97,11 +101,10 @@ export function or(
 
     yield* bufferedTokens;
 
-    const parserToken = createParserToken(options, output);
-    if (parserToken) {
-      yield parserToken;
+    if ("token" in options) {
+      yield new OptionalToken(parsedValue, options);
     }
 
-    return new SuccessfulResult(ParserType.OR, output, sourceIter);
+    return new SuccessfulResult(ParserType.OR, parsedValue, sourceIter);
   };
 }

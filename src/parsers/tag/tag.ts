@@ -10,6 +10,7 @@ import { ParserType } from "../../shared/constants";
 import {
   AbortedResult,
   DataQuery,
+  OptionalToken,
   SuccessfulResult,
 } from "../../shared/classes";
 
@@ -48,9 +49,8 @@ export function tag<R = string>(
       parsedChars += char;
     }
 
-    const parserToken = createParserToken(options, parsedChars);
-    if (parserToken) {
-      yield parserToken;
+    if ("token" in options) {
+      yield new OptionalToken(parsedChars, options);
     }
 
     return new SuccessfulResult(ParserType.TAG, parsedChars, sourceIter);

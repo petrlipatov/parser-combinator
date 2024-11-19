@@ -2,6 +2,7 @@ import { ParserMessage, ParserState, ParserType } from "../constants";
 import {
   SuccessfulReturnToken,
   AbortedReturnToken,
+  OptionalYieldToken,
   DataQueryToken,
   TestPattern,
   ParserOptions,
@@ -80,18 +81,16 @@ export class DataQuery implements DataQueryToken {
 //   iter?: Iterable<string>;
 // }
 
-// export class OptionalToken<R = unknown, T = unknown>
-//   implements OptionalYieldToken
-// {
-//   state;
-//   type;
-//   data;
-//   constructor(type: string, data) {
-//     this.state = ParserState.YIELD;
-//     this.type = type;
-//     this.data = data;
-//   }
-// }
+export class OptionalToken<R = unknown> implements OptionalYieldToken {
+  state: ParserState.YIELD;
+  type: string;
+  data;
+  constructor(data: R, options: ParserOptions) {
+    this.state = ParserState.YIELD;
+    this.type = options.token;
+    this.data = options.tokenValue?.(data) ?? data;
+  }
+}
 
 // export const createParserToken = <R>(
 //   options: ParserOptions,

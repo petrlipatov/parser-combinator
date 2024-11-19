@@ -278,16 +278,13 @@ const htmlParser = seq(
 
 const i = htmlParser(html);
 
-const startTime = performance.now();
 const res2 = [...i];
-const endTime = performance.now();
-console.log(`Время выполнения: ${endTime - startTime} мс`);
 
-console.log(callCount2);
+// console.log(callCount2);
 
-// res2.forEach((token) => {
-//   console.log(token);
-// });
+res2.forEach((token) => {
+  console.log(token);
+});
 
 // const str = "string";
 
