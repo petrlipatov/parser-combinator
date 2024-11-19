@@ -1,4 +1,5 @@
-import { ParserType } from "./constants";
+import { ParserType } from "./shared/constants";
+import { callCount1, callCount2, callCount3 } from "./helpers";
 import { optional } from "./parsers/optional";
 import { or } from "./parsers/or";
 import { repeat } from "./parsers/repeat";
@@ -6,69 +7,69 @@ import { seq } from "./parsers/seq";
 import { tag } from "./parsers/tag";
 
 const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Sample HTML Page</title>
-      <style>
-        body { font-family: Arial, sans-serif; }
-        h1 { color: #333; }
-      </style>
-      <script>
-        console.log('Hello from script!');
-      </script>
-    </head>
-    <body>
-      <div id="main" class="container">
-        <header>
-          <h1>Welcome to the Sample Page</h1>
-          <nav>
-            <ul>
-              <li><a href="#home">Home</a></li>
-              <li><a href="#about">About</a></li>
-              <li><a href="#contact">Contact</a></li>
-            </ul>
-          </nav>
-        </header>
-  
-        <section id="home">
-          <h2>Home Section</h2>
-          <p>This is a <strong>sample</strong> paragraph with some <em>inline</em> elements.</p>
-          <p>Here is an image:</p>
-          <img src="image.jpg" alt="Sample image" width="300">
-          <div style="border: 1px solid #ccc; padding: 10px; margin-top: 20px; background-color: #f9f9f9;">
-            <h3 style="color: #007BFF;">Inline Styled Section</h3>
-            <p style="font-size: 14px; line-height: 1.5;">This section has an inline border, padding, and background color.</p>
-          </div>
-        </section>
-  
-        <section id="about">
-          <h2>About Us</h2>
-          <p>We are a company that values <strong>quality</strong> and <em>innovation</em>.</p>
-          <div style="color: green; font-weight: bold;">
-            <p>This text is styled inline with green color and bold weight.</p>
-          </div>
-        </section>
-  
-        <section id="contact">
-          <h2>Contact Us</h2>
-          <form action="/submit" method="post">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email">
-            <button type="submit">Submit</button>
-          </form>
-        </section>
-        <footer>
-          <p>&copy; 2024 Sample Website. All rights reserved.</p>
-        </footer>
-      </div>
-    </body>
-    </html>
-  `;
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample HTML Page</title>
+    <style>
+      body { font-family: Arial, sans-serif; }
+      h1 { color: #333; }
+    </style>
+    <script>
+      console.log('Hello from script!');
+    </script>
+  </head>
+  <body>
+    <div id="main" class="container">
+      <header>
+        <h1>Welcome to the Sample Page</h1>
+        <nav>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <section id="home">
+        <h2>Home Section</h2>
+        <p>This is a <strong>sample</strong> paragraph with some <em>inline</em> elements.</p>
+        <p>Here is an image:</p>
+        <img src="image.jpg" alt="Sample image" width="300">
+        <div style="border: 1px solid #ccc; padding: 10px; margin-top: 20px; background-color: #f9f9f9;">
+          <h3 style="color: #007BFF;">Inline Styled Section</h3>
+          <p style="font-size: 14px; line-height: 1.5;">This section has an inline border, padding, and background color.</p>
+        </div>
+      </section>
+
+      <section id="about">
+        <h2>About Us</h2>
+        <p>We are a company that values <strong>quality</strong> and <em>innovation</em>.</p>
+        <div style="color: green; font-weight: bold;">
+          <p>This text is styled inline with green color and bold weight.</p>
+        </div>
+      </section>
+
+      <section id="contact">
+        <h2>Contact Us</h2>
+        <form action="/submit" method="post">
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email">
+          <button type="submit">Submit</button>
+        </form>
+      </section>
+      <footer>
+        <p>&copy; 2024 Sample Website. All rights reserved.</p>
+      </footer>
+    </div>
+  </body>
+  </html>
+`;
 
 const DOCTYPE = [
   /</,
@@ -276,11 +277,19 @@ const htmlParser = seq(
 );
 
 const i = htmlParser(html);
-const res2 = [...i];
 
-res2.forEach((token) => {
-  console.log(token);
-});
+const startTime = performance.now();
+const res2 = [...i];
+const endTime = performance.now();
+console.log(`Время выполнения: ${endTime - startTime} мс`);
+
+console.log(callCount1);
+console.log(callCount2);
+console.log(callCount3);
+
+// res2.forEach((token) => {
+//   console.log(token);
+// });
 
 // const str = "string";
 

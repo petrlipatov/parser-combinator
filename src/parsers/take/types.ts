@@ -1,4 +1,4 @@
-import { ParserOptions } from "../../types";
+import { ParserOptions } from "../../shared/types";
 
 export interface TakeOptions extends ParserOptions<string> {
   min?: number;

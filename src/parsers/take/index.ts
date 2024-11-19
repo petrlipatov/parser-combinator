@@ -1,21 +1,20 @@
-import { ParserType } from "../../constants";
+import { ParserType } from "../../shared/constants";
 import {
-  createAbortedResult,
   createExpectResult,
   createParserToken,
-  createSuccesfullResult,
   intoIter,
   iterSeq,
   testChar,
 } from "../../helpers";
-import { Parser, SuccessfulResult, TestPattern } from "../../types";
+import { Parser, TestPattern, SuccessfulReturnToken } from "../../shared/types";
 import { TakeOptions } from "./types";
+import { AbortedResult, SuccessfulResult } from "../../shared/classes";
 
 export function take(
   pattern: TestPattern,
   options: TakeOptions = {}
 ): Parser<string, typeof options.tokenValue> {
-  return function* (source, prev: SuccessfulResult) {
+  return function* (source, prev: SuccessfulReturnToken) {
     const { min = 1, max = Infinity } = options;
 
     let sourceIter = intoIter(source);
@@ -48,7 +47,7 @@ export function take(
       } catch (err) {
         if (count < min) {
           const { message } = err;
-          return createAbortedResult({
+          return new AbortedResult({
             type: ParserType.TAKE,
             message,
             options,
@@ -69,7 +68,7 @@ export function take(
       yield parserToken;
     }
 
-    return createSuccesfullResult(
+    return new SuccessfulResult(
       ParserType.TAKE,
       parsedChars,
       buffer.length > 0 ? iterSeq(buffer, sourceIter) : sourceIter

@@ -1,20 +1,23 @@
-import { ParserState, ParserType } from "../../constants";
+import { ParserState, ParserType } from "../../shared/constants";
 import {
-  createAbortedResult,
   createParserToken,
   createSeqErrorMessage,
-  createSuccesfullResult,
   intoBufIter,
   intoIter,
   isBufferedIter,
 } from "../../helpers";
-import { Parser, ParserOptions, SuccessfulResult } from "../../types";
+import {
+  Parser,
+  ParserOptions,
+  SuccessfulReturnToken,
+} from "../../shared/types";
+import { AbortedResult, SuccessfulResult } from "../../shared/classes";
 
-export function seq<R = SuccessfulResult>(
+export function seq<R = SuccessfulReturnToken>(
   ...parsers: Parser[]
 ): Parser<R[], never>;
 
-export function seq<R = SuccessfulResult>(
+export function seq<R = SuccessfulReturnToken>(
   options: ParserOptions<R[]>,
   ...parsers: Parser[]
 ): Parser<R[], (typeof options.tokenValue)[]>;
@@ -31,8 +34,8 @@ export function seq(
     options = firstArg;
   }
 
-  return function* (source, prev: SuccessfulResult) {
-    let combinedParsedData: SuccessfulResult[] = [];
+  return function* (source, prev: SuccessfulReturnToken) {
+    let output: SuccessfulReturnToken[] = [];
     let sourceIter = intoIter(source);
 
     let buffer = [];
@@ -54,7 +57,7 @@ export function seq(
         switch (parserState) {
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
-            combinedParsedData.push(chunk.value);
+            output.push(chunk.value);
             sourceIter = intoIter(iter);
             prev = chunk.value;
             break loop;
@@ -70,13 +73,14 @@ export function seq(
             parserIter.next(newInput);
             break;
           }
+
           case ParserState.ABORTED: {
             const message = createSeqErrorMessage(
               chunk.value.type,
               chunk.value.message
             );
 
-            return createAbortedResult({
+            return new AbortedResult({
               type: ParserType.SEQ,
               message,
               options,
@@ -87,15 +91,11 @@ export function seq(
       }
     }
 
-    const parserToken = createParserToken(options, combinedParsedData);
+    const parserToken = createParserToken(options, output);
     if (parserToken) {
       yield parserToken;
     }
 
-    return createSuccesfullResult(
-      ParserType.SEQ,
-      combinedParsedData,
-      sourceIter
-    );
+    return new SuccessfulResult(ParserType.SEQ, output, sourceIter);
   };
 }

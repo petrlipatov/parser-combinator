@@ -1,19 +1,17 @@
-import { ParserMessage, ParserState, ParserType } from "../../constants";
+import { ParserMessage, ParserState, ParserType } from "../../shared/constants";
 import {
-  createAbortedResult,
   createParserToken,
-  createSuccesfullResult,
   intoBufIter,
   intoIter,
   isBufferedIter,
 } from "../../helpers";
 import {
-  AbortedResult,
+  AbortedReturnToken,
   Parser,
   ParserOptions,
-  ParserToken,
-  SuccessfulResult,
-} from "../../types";
+  OptionalYieldToken,
+} from "../../shared/types";
+import { AbortedResult, SuccessfulResult } from "../../shared/classes";
 
 export function or<R = SuccessfulResult, T = unknown>(
   ...parsers: Parser[]
@@ -37,7 +35,7 @@ export function or(
   }
 
   return function* (source, prev: SuccessfulResult) {
-    let parserResult: SuccessfulResult;
+    let output: SuccessfulResult;
     let sourceIter = intoIter(source);
     let isSuccessful = false;
 
@@ -50,8 +48,8 @@ export function or(
       bufferLengthOnInit = buffer.length;
     }
 
-    const errorsStack: AbortedResult[] = [];
-    const bufferedTokens: ParserToken[] = [];
+    const errorsStack: AbortedReturnToken[] = [];
+    const bufferedTokens: OptionalYieldToken[] = [];
 
     outer: for (const parser of parsers) {
       if (isBufferedIter(sourceIter)) {
@@ -73,7 +71,7 @@ export function or(
         switch (parserState) {
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
-            parserResult = chunk.value;
+            output = chunk.value;
             prev = chunk.value;
             isSuccessful = true;
 
@@ -112,7 +110,7 @@ export function or(
     }
 
     if (!isSuccessful) {
-      return createAbortedResult({
+      return new AbortedResult({
         type: ParserType.OR,
         message: ParserMessage.OR_ERROR,
         stack: errorsStack,
@@ -122,11 +120,11 @@ export function or(
 
     yield* bufferedTokens;
 
-    const parserToken = createParserToken(options, parserResult);
+    const parserToken = createParserToken(options, output);
     if (parserToken) {
       yield parserToken;
     }
 
-    return createSuccesfullResult(ParserType.OR, parserResult, sourceIter);
+    return new SuccessfulResult(ParserType.OR, output, sourceIter);
   };
 }

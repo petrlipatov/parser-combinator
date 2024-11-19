@@ -1,15 +1,14 @@
-import { ParserState, ParserType } from "../../constants";
+import { ParserState, ParserType } from "../../shared/constants";
 import {
-  createAbortedResult,
   createParserToken,
-  createSuccesfullResult,
   intoBufIter,
   intoIter,
   isBufferedIter,
   iterSeq,
 } from "../../helpers";
-import { Parser, ParserToken, SuccessfulResult } from "../../types";
-import { RepeatOptions } from "./types";
+import { Parser, OptionalYieldToken } from "../../shared/types";
+import { RepeatOptions } from "./utils/types";
+import { SuccessfulResult, AbortedResult } from "../../shared/classes";
 
 export function repeat<R = SuccessfulResult, T = unknown>(
   parser: Parser,
@@ -22,7 +21,7 @@ export function repeat<R = SuccessfulResult, T = unknown>(
     let count = 0;
 
     const parsersResults: SuccessfulResult[] = [];
-    const bufferedYields: ParserToken[] = [];
+    const bufferedYields: OptionalYieldToken[] = [];
 
     let parserIter;
     let buffer = [];
@@ -75,7 +74,6 @@ export function repeat<R = SuccessfulResult, T = unknown>(
           if (count >= min) {
             const delta = buffer.length - bufferLengthOnInit;
             if (delta > 0) {
-              console.log(delta);
               const spliced = buffer.splice(-delta);
               sourceIter = iterSeq(spliced, sourceIter);
             }
@@ -121,10 +119,10 @@ export function repeat<R = SuccessfulResult, T = unknown>(
                 sourceIter.revert(spliced);
               }
 
-              return createAbortedResult({
+              return new AbortedResult({
                 type: ParserType.REPEAT,
-                prevParser: prev,
                 message: "repeat error",
+                prevParser: prev,
                 options,
               });
             }
@@ -152,10 +150,6 @@ export function repeat<R = SuccessfulResult, T = unknown>(
       yield parserToken;
     }
 
-    return createSuccesfullResult(
-      ParserType.REPEAT,
-      parsersResults,
-      sourceIter
-    );
+    return new SuccessfulResult(ParserType.REPEAT, parsersResults, sourceIter);
   };
 }

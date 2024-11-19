@@ -1,16 +1,20 @@
-import { ParserType } from "../constants";
-import { ParserMessage, ParserState } from "../constants";
+import { SuccessfulResult } from "../shared/classes";
+import { ParserType } from "../shared/constants";
+import { ParserMessage, ParserState } from "../shared/constants";
 import {
-  AbortedResult,
+  AbortedReturnToken,
   BufferedIterator,
-  DataQuery,
+  DataQueryToken,
   ExtendedIterableIterator,
   ParserError,
   ParserOptions,
-  ParserToken,
-  SuccessfulResult,
+  OptionalYieldToken,
   TestPattern,
-} from "../types";
+} from "../shared/types";
+
+export let callCount1 = 0;
+export let callCount2 = 0;
+export let callCount3 = 0;
 
 export function intoIter<T>(
   iterable: Iterable<T>
@@ -36,7 +40,9 @@ export function intoIter<T>(
       }
 
       const chunk = iter.next();
-
+      callCount1 += 1;
+      // console.log("intoIter", callCount);
+      // console.log(chunk);
       return chunk;
     },
 
@@ -50,6 +56,46 @@ export function intoIter<T>(
         nextValue = iter.next();
       }
       return nextValue;
+    },
+  };
+}
+
+export function intoBufIter<T>(
+  iterable: Iterable<T>,
+  buffer: T[]
+): BufferedIterator<T> {
+  const iter = intoIter(iterable);
+
+  return {
+    [Symbol.iterator]() {
+      return this;
+    },
+
+    next() {
+      const chunk = iter.next();
+      callCount2 += 1;
+      // console.log(chunk);
+      if (!chunk.done) {
+        buffer.push(chunk.value);
+      }
+
+      return chunk;
+    },
+
+    revert(iterable) {
+      iter.revert(iterable);
+    },
+
+    getIter() {
+      return iter;
+    },
+
+    getBuffer() {
+      return buffer;
+    },
+
+    peak() {
+      return iter.peak();
     },
   };
 }
@@ -71,7 +117,7 @@ export function iterSeq<T>(
 
     next() {
       let chunk = iter.next();
-
+      callCount3 += 1;
       while (chunk.done) {
         cursor++;
 
@@ -85,45 +131,6 @@ export function iterSeq<T>(
 
       return chunk;
     },
-    peak() {
-      return iter.peak();
-    },
-  };
-}
-
-export function intoBufIter<T>(
-  iterable: Iterable<T>,
-  buffer: T[]
-): BufferedIterator<T> {
-  const iter = intoIter(iterable);
-
-  return {
-    [Symbol.iterator]() {
-      return this;
-    },
-
-    next() {
-      const chunk = iter.next();
-      // console.log(chunk);
-      if (!chunk.done) {
-        buffer.push(chunk.value);
-      }
-
-      return chunk;
-    },
-
-    revert(iterable) {
-      iter.revert(iterable);
-    },
-
-    getIter() {
-      return iter;
-    },
-
-    getBuffer() {
-      return buffer;
-    },
-
     peak() {
       return iter.peak();
     },
@@ -165,7 +172,7 @@ export function testChar(
   return true;
 }
 
-export const createExpectResult = (): DataQuery => ({
+export const createExpectResult = (): DataQueryToken => ({
   state: ParserState.EXPECT_NEW_INPUT,
   message: ParserMessage.EXPECT_NEW_INPUT,
 });
@@ -177,7 +184,7 @@ interface AbortedResultOptions<R> {
   prevParser?: SuccessfulResult;
   prevValue?: R;
   pattern?: Iterable<TestPattern> | TestPattern;
-  stack?: AbortedResult<R>[];
+  stack?: AbortedReturnToken<R>[];
 }
 
 export const createAbortedResult = <T, R>({
@@ -188,7 +195,7 @@ export const createAbortedResult = <T, R>({
   prevValue,
   pattern,
   stack,
-}: AbortedResultOptions<R>): AbortedResult<R> => ({
+}: AbortedResultOptions<R>): AbortedReturnToken<R> => ({
   state: ParserState.ABORTED,
   type,
   message,
@@ -215,7 +222,7 @@ export const createSuccesfullResult = <R>(
 export const createParserToken = <R>(
   options: ParserOptions,
   parsedChars: R
-): ParserToken<R, typeof options.tokenValue> | null => {
+): OptionalYieldToken<R, typeof options.tokenValue> | null => {
   if (!options.token) return null;
   return {
     state: ParserState.YIELD,

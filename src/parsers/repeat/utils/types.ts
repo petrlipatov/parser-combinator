@@ -1,4 +1,4 @@
-import { ParserOptions } from "../../types";
+import { ParserOptions } from "../../../shared/types";
 
 export interface RepeatOptions<R = unknown> extends ParserOptions<R> {
   min?: number;

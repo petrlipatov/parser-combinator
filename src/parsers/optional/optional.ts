@@ -1,4 +1,4 @@
-import { Parser, ParserOptions } from "../../types";
+import { Parser, ParserOptions } from "../../shared/types";
 import { repeat } from "../repeat";
 
 export function optional<T = unknown, R = unknown>(

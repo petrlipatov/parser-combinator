@@ -6,43 +6,45 @@ export interface ParserResult {
 export interface ParserYieldResult extends ParserResult {}
 export interface ParserReturnResult extends ParserResult {}
 
-export interface ParserToken<R = unknown, T = unknown>
+export interface OptionalYieldToken<R = unknown, T = unknown>
   extends ParserYieldResult {
   state: ParserState.YIELD;
   type: string;
   data: T extends (...args: any[]) => infer U ? U : R;
 }
 
-export interface DataQuery extends ParserYieldResult {
+export interface DataQueryToken extends ParserYieldResult {
   state: ParserState.EXPECT_NEW_INPUT;
   message: string;
 }
 
-export interface SuccessfulResult<R = unknown> extends ParserReturnResult {
+export interface SuccessfulReturnToken<R = unknown> extends ParserReturnResult {
   state: ParserState.SUCCESSFUL;
   type: ParserType;
   data: R;
   iter: Iterable<string>;
 }
 
-export interface AbortedResult<R = unknown> extends ParserReturnResult {
+export interface AbortedReturnToken<R = unknown> extends ParserReturnResult {
   state: ParserState.ABORTED;
   type: ParserType;
   message: string;
   pattern?: Iterable<TestPattern> | TestPattern;
   options?: ParserOptions;
-  prevParser?: SuccessfulResult;
+  prevParser?: SuccessfulReturnToken;
   prevValue?: R;
-  stack?: AbortedResult[];
+  stack?: AbortedReturnToken[];
   iter?: Iterable<string>;
 }
 
+//Generator<T = unknown, TReturn = any, TNext = any>
+
 export type Parser<R = unknown, T = unknown> = (
   iterable: Iterable<string>,
-  prev?: SuccessfulResult
+  prev?: SuccessfulReturnToken
 ) => Generator<
-  ParserToken<R, T> | DataQuery,
-  SuccessfulResult<R> | AbortedResult<R>,
+  OptionalYieldToken<R, T> | DataQueryToken,
+  SuccessfulReturnToken<R> | AbortedReturnToken<R>,
   Iterable<string> | undefined
 >;
 
@@ -64,8 +66,8 @@ export interface BufferedIterator<T> extends ExtendedIterableIterator<T> {
 }
 
 export class ParserError extends Error {
-  prev: SuccessfulResult | undefined;
-  constructor(message: string, prev: SuccessfulResult | undefined) {
+  prev: SuccessfulReturnToken | undefined;
+  constructor(message: string, prev: SuccessfulReturnToken | undefined) {
     super(message);
     this.prev = prev;
   }

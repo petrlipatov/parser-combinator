@@ -1,25 +1,24 @@
 import {
   Parser,
   ParserOptions,
-  SuccessfulResult,
   TestPattern,
-} from "../../types";
+  SuccessfulReturnToken,
+} from "../../shared/types";
 
 import {
-  createAbortedResult,
   createExpectResult,
   createParserToken,
-  createSuccesfullResult,
   intoIter,
   testChar,
 } from "../../helpers";
-import { ParserType } from "../../constants";
+import { ParserType } from "../../shared/constants";
+import { AbortedResult, SuccessfulResult } from "../../shared/classes";
 
 export function tag<R = string>(
   pattern: Iterable<TestPattern>,
   options: ParserOptions<R> = {}
 ): Parser<string, typeof options.tokenValue> {
-  return function* (source: Iterable<string>, prev: SuccessfulResult) {
+  return function* (source: Iterable<string>, prev: SuccessfulReturnToken) {
     let sourceIter = intoIter(source);
     let parsedChars = "";
 
@@ -38,7 +37,7 @@ export function tag<R = string>(
         testChar(patternSymbol, char, prev);
       } catch (err) {
         const { message } = err;
-        return createAbortedResult({
+        return new AbortedResult({
           type: ParserType.TAG,
           message,
           options,
@@ -55,6 +54,6 @@ export function tag<R = string>(
       yield parserToken;
     }
 
-    return createSuccesfullResult(ParserType.TAG, parsedChars, sourceIter);
+    return new SuccessfulResult(ParserType.TAG, parsedChars, sourceIter);
   };
 }
