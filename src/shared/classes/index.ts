@@ -53,12 +53,13 @@ export class AbortedResult<R = unknown> implements AbortedReturnToken {
     this.state = ParserState.ABORTED;
     this.type = type;
     this.message = message;
-    this.pattern = pattern;
-    this.options = options;
-    this.prevParser = prevParser;
-    this.prevValue = prevValue;
-    this.stack = stack;
-    this.iter = iter;
+
+    if (pattern !== undefined) this.pattern = pattern;
+    if (options !== undefined) this.options = options;
+    if (prevParser !== undefined) this.prevParser = prevParser;
+    if (prevValue !== "") this.prevValue = prevValue;
+    if (stack !== undefined) this.stack = stack;
+    if (iter !== undefined) this.iter = iter;
   }
 }
 

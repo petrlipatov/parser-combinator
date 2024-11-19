@@ -35,6 +35,9 @@ describe("tag Parser:", () => {
     const aParser = tag("a");
     const aParserIter = aParser("b");
     const parserResult = aParserIter.next();
+
+    console.log(parserResult);
+
     expect(parserResult).toEqual({
       value: {
         state: 1,
