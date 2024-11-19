@@ -1,7 +1,8 @@
-import { ParserState, ParserType } from "../constants";
+import { ParserMessage, ParserState, ParserType } from "../constants";
 import {
   SuccessfulReturnToken,
   AbortedReturnToken,
+  DataQueryToken,
   TestPattern,
   ParserOptions,
 } from "../types";
@@ -60,6 +61,16 @@ export class AbortedResult<R = unknown> implements AbortedReturnToken {
     if (prevValue !== "") this.prevValue = prevValue;
     if (stack !== undefined) this.stack = stack;
     if (iter !== undefined) this.iter = iter;
+  }
+}
+
+export class DataQuery implements DataQueryToken {
+  state: ParserState.EXPECT_NEW_INPUT;
+  message: ParserMessage.EXPECT_NEW_INPUT;
+
+  constructor() {
+    this.state = ParserState.EXPECT_NEW_INPUT;
+    this.message = ParserMessage.EXPECT_NEW_INPUT;
   }
 }
 

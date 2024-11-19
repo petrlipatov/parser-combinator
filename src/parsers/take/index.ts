@@ -1,14 +1,12 @@
 import { ParserType } from "../../shared/constants";
-import {
-  createExpectResult,
-  createParserToken,
-  intoIter,
-  iterSeq,
-  testChar,
-} from "../../helpers";
+import { createParserToken, intoIter, iterSeq, testChar } from "../../helpers";
 import { Parser, TestPattern, SuccessfulReturnToken } from "../../shared/types";
 import { TakeOptions } from "./types";
-import { AbortedResult, SuccessfulResult } from "../../shared/classes";
+import {
+  AbortedResult,
+  DataQuery,
+  SuccessfulResult,
+} from "../../shared/classes";
 
 export function take(
   pattern: TestPattern,
@@ -34,7 +32,7 @@ export function take(
         if (count >= min) {
           break;
         }
-        source = yield createExpectResult();
+        source = yield new DataQuery();
         sourceIter = intoIter(source);
         chunk = sourceIter.next();
         char = chunk.value;
