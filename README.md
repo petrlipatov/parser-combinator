@@ -15,6 +15,19 @@ This project provides a powerful and flexible parser combinator implementation i
   - `REPEAT`: Repeats a parser multiple times.
 - **Extensibility**: Create custom parsers tailored to your needs.
 
+## States
+
+Each parser returns a state context representing the outcome of its operation. The state context is defined by the ParserState enum, which includes the following values:
+
+```typescript
+enum ParserState {
+  SUCCESSFUL, // 0: Indicates the parser successfully processed the input.
+  ABORTED, // 1: Indicates the parser aborted due to an error or invalid input.
+  EXPECT_NEW_INPUT, // 2: The parser expects new input to continue its operation.
+  YIELD, // 3: The parser has yielded an OptionalToken
+}
+```
+
 ## TAG Parser
 
 ```typescript
