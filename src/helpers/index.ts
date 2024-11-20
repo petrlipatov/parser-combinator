@@ -148,12 +148,12 @@ export const createSuccesfullResult = <R>(
 export const createParserToken = <R>(
   options: ParserOptions,
   parsedChars: R
-): OptionalYieldToken<R, typeof options.tokenValue> | null => {
+): OptionalYieldToken<R, typeof options.valueMapper> | null => {
   if (!options.token) return null;
   return {
     state: ParserState.YIELD,
     type: options.token,
-    data: options.tokenValue?.(parsedChars) ?? parsedChars,
+    data: options.valueMapper?.(parsedChars) ?? parsedChars,
   };
 };
 

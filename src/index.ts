@@ -34,6 +34,8 @@ const html = `
         </nav>
       </header>
 
+      <!-- Это пример комментария в HTML -->
+
       <section id="home">
         <h2>Home Section</h2>
         <p>This is a <strong>sample</strong> paragraph with some <em>inline</em> elements.</p>
@@ -257,15 +259,15 @@ const textNode = repeat(tag(TEXT_NODE_CHAR), {
 // const i = textNode("div");
 // console.log([...i]);
 
-// const comment = seq(
-//   tag("<!--"),
-//   repeat(tag(COMMENT_CHAR), {
-//     token: "COMMENT",
-//     tokenValue: (output) => output.reduce((acc, el) => acc + el.data, ""),
-//     invalidPairs: [["-", "-"]],
-//   }),
-//   tag("-->")
-// );
+const comment = seq(
+  tag("<!--"),
+  repeat(tag(COMMENT_CHAR), {
+    token: "COMMENT",
+    valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
+    invalidSubstring: "-->",
+  }),
+  tag("-->")
+);
 
 // const i = comment("<!-- Это пример комментария в HTML -->");
 // console.log(i.next());
@@ -273,19 +275,12 @@ const textNode = repeat(tag(TEXT_NODE_CHAR), {
 const htmlParser = seq(
   optional(ws),
   doctype,
-  repeat(or(ws, openTag, textNode, closeTag))
+  repeat(or(ws, openTag, textNode, closeTag, comment))
 );
 
 const i = htmlParser(html);
 
 const res2 = [...i];
 
-// console.log(callCount2);
-
-res2.forEach((token) => {
-  console.log(token);
-});
-
-// const str = "string";
-
-// const i = intoIter(str);
+console.log(callCount2);
+console.log(res2);

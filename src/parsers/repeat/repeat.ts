@@ -14,7 +14,7 @@ export function repeat<R = SuccessfulResult, T = unknown>(
   options: RepeatOptions<R[]> = {}
 ): Parser {
   return function* (source: Iterable<string>, prev: SuccessfulResult) {
-    const { min = 1, max = Infinity, invalidPairs } = options;
+    const { min = 1, max = Infinity, invalidSubstring } = options;
     let sourceIter = intoIter(source);
     let count = 0;
 
@@ -31,6 +31,25 @@ export function repeat<R = SuccessfulResult, T = unknown>(
       inner: while (true) {
         if (count >= max) {
           break outer;
+        }
+
+        if (invalidSubstring) {
+          let peakedSubstring = "";
+          for (let i = 0; i < invalidSubstring.length; i++) {
+            const peakedChar = sourceIter.next();
+            peakedSubstring += peakedChar.value;
+          }
+
+          sourceIter.revert(invalidSubstring.length);
+          if (invalidSubstring === peakedSubstring) {
+            if (count < min) {
+              return new AbortedResult({
+                type: ParserType.REPEAT,
+                message: invalidSubstring,
+              });
+            }
+            break outer;
+          }
         }
 
         let chunk = parserIter.next();
@@ -52,12 +71,10 @@ export function repeat<R = SuccessfulResult, T = unknown>(
         switch (parserState) {
           case ParserState.SUCCESSFUL: {
             const { iter } = chunk.value;
-
             parsedResult.push(chunk.value);
             prev = chunk.value;
             count++;
             sourceIter = intoIter(iter);
-
             bufferLengthOnInit = buffer.length;
 
             if (count >= min) {
@@ -99,25 +116,3 @@ export function repeat<R = SuccessfulResult, T = unknown>(
     return new SuccessfulResult(ParserType.REPEAT, parsedResult, sourceIter);
   };
 }
-
-// if (invalidPairs && "data" in chunk.value) {
-//   const { data: currChunkChar } = chunk.value;
-//   const { value: nextChunkChar } = sourceIter.peak();
-
-//   for (const pair of invalidPairs) {
-//     if (isPairInvalid(currChunkChar, nextChunkChar, pair)) {
-//       if (count < min) {
-//         return createAbortedResult({
-//           type: ParserType.REPEAT,
-//           prevParser: prev,
-//           message: `Invalid pair "${currChunkChar}${nextChunkChar}"`,
-//           options,
-//         });
-//       }
-
-//       sourceIter =
-//         buffer.length > 0 ? iterSeq(buffer, sourceIter) : sourceIter;
-//       break outer;
-//     }
-//   }
-// }
