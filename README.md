@@ -46,14 +46,6 @@ console.log(i.next());
 //  },
 //  done: true
 // }
-
-const bParser = tag("b", { token: "b Symbol" });
-
-const i = bParser("b");
-
-console.log(...i);
-
-// OptionalToken { state: 3, type: 'b Symbol', data: 'b' }
 ```
 
 ```typescript
@@ -204,5 +196,159 @@ console.log(i.next());
 //     }
 //   ],
 //   iter: {...}
+// }
+```
+
+## Options: Optional Yield Token
+
+First case — return type: SuccessfulResult (no options provided):
+
+```typescript
+const aParser = tag("a");
+
+const i = aParser("a");
+
+console.log(i.next());
+
+// {
+//  value: SuccessfulResult {
+//    state: 0,
+//    type: 'TAG',
+//    data: 'a',
+//    iter: {...}
+//  },
+//  done: true
+// }
+```
+
+Second case — yield type: OptionalToken (options provided):
+
+```typescript
+const aParser = tag("a", { token: "A CHAR" });
+
+const i = aParser("a");
+
+console.log(...i);
+
+// OptionalToken { state: 3, type: 'A CHAR', data: 'a' }
+```
+
+## Options: Value Mapper
+
+In the first example, the parser returns each character as a separate result, creating an array of SuccessfulResult objects, each with one character in the data field.
+
+```typescript
+const textNode = repeat(tag(TEXT_NODE_CHAR_REGX), {
+  token: "TEXT_NODE",
+});
+
+const i = textNode("text template");
+
+console.log(i.next());
+
+// {
+//   value: OptionalToken {
+//     state: 3,
+//     type: 'TEXT_NODE',
+//     data: Array(13) [
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 't',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'e',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'x',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 't',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: ' ',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 't',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'e',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'm',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'p',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'l',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'a',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 't',
+//         iter: {}
+//       },
+//       SuccessfulResult {
+//         state: 0,
+//         type: 'TAG',
+//         data: 'e',
+//         iter: {}
+//       }
+//     ]
+//   },
+//   done: false
+// }
+```
+
+In the second example, a value mapper is used to combine all characters into a single string ('text template'), turning the array of individual characters into a single output.
+
+```typescript
+const textNode = repeat(tag(TEXT_NODE_CHAR_REGX), {
+  token: "TEXT_NODE",
+  valueMapper: (output) => output.reduce((acc, el) => acc + el.data, ""),
+});
+
+const i = textNode("text template");
+
+console.log(i.next());
+
+// {
+//   value: OptionalToken { state: 3, type: 'TEXT_NODE', data: 'text template' },
+//   done: false
 // }
 ```
